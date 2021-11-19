@@ -1,0 +1,10 @@
+human_motorcyclist:   cyclist
+vehicle_car:          car
+traffic_trafficlight: traffic_light
+vehicle_truck:        truck
+traffic_trafficsign:  traffic_sign
+human_pedestrian:     pedestrian
+vehicle_bus:          bus
+vehicle_van:          car
+human_cyclist:        cyclist
+trafficsign:          traffic_sign
