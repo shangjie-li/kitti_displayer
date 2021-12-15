@@ -77,23 +77,26 @@ class labelme2coco(object):
                 self.images.append(self.image(data, idx))
                 
                 for shape in data['shapes']:
-                    label = shape['label'] # class name from labelme json file
-                    points = shape['points']
-                    if self.class_map:
-                        label = self.class_map[label] if label in self.class_map else label
-                    
-                    if self.specified_classes is None:
-                        if label not in self.labels:
-                            self.labels.append(label)
-                            self.categories.append(self.categorie(label))
-                            self.num_ann[label] = 0
-                        self.annotations.append(self.annotation(points, label, idx))
-                        self.ann_id += 1
-                        self.num_ann[label] += 1
-                    elif label in self.labels:
-                        self.annotations.append(self.annotation(points, label, idx))
-                        self.ann_id += 1
-                        self.num_ann[label] += 1
+                    try:
+                        label = shape['label'] # class name from labelme json file
+                        points = shape['points']
+                        if self.class_map:
+                            label = self.class_map[label] if label in self.class_map else label
+                        
+                        if self.specified_classes is None:
+                            if label not in self.labels:
+                                self.labels.append(label)
+                                self.categories.append(self.categorie(label))
+                                self.num_ann[label] = 0
+                            self.annotations.append(self.annotation(points, label, idx))
+                            self.ann_id += 1
+                            self.num_ann[label] += 1
+                        elif label in self.labels:
+                            self.annotations.append(self.annotation(points, label, idx))
+                            self.ann_id += 1
+                            self.num_ann[label] += 1
+                    except:
+                        print('Warning: A shape is passed because of ValueError.')
                         
         print('\nAll class names:\n', self.labels)
         print('\nNumber of annoations for each class:')
