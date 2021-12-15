@@ -18,7 +18,7 @@ from shapely.geometry import Polygon
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
-        description='labelme2coco')
+        description='Labelme2COCO')
     parser.add_argument('--images_root', default='images_and_labels', type=str,
                         help='Root directory path to images.')
     parser.add_argument('--labels_root', default='images_and_labels', type=str,
