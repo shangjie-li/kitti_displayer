@@ -35,7 +35,7 @@ if __name__ == '__main__':
     std_rs, std_gs, std_bs = [], [], []
     
     for idx in range(num):
-        name = files[idx]
+        name = os.path.basename(files[idx])
         img = cv2.imread(os.path.join(dataset_root, name))
         #~ img = cv2.imread(os.path.join(dataset_root, name), cv2.IMREAD_GRAYSCALE)[:, :, None].repeat(3, axis=-1)
         print('Reading: %d / %d...' % (idx + 1, num))
