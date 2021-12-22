@@ -25,7 +25,9 @@ if __name__ == '__main__':
         exit()
 
     dataset_root = sys.argv[1]
-    files = glob.glob(os.path.join(dataset_root, '*.png'))
+    files_of_png = glob.glob(os.path.join(dataset_root, '*.png'))
+    files_of_jpg = glob.glob(os.path.join(dataset_root, '*.jpg'))
+    files = files_of_png + files_of_jpg
     num = len(files)
     
     mean_rs, mean_gs, mean_bs = [], [], []
