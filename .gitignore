@@ -1,2 +1,3 @@
-images_and_labels
-*.json
+**__pycache__**
+
+kitti

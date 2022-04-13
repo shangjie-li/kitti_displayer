@@ -20,12 +20,10 @@ from pathlib import Path
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description='KITTI Displayer')
-    parser.add_argument('--images_root', default='images_and_labels', type=str,
+    parser.add_argument('--images_root', default='kitti/images', type=str,
                         help='Root directory path to images.')
-    parser.add_argument('--info_file', default='instances_train.json', type=str,
+    parser.add_argument('--info_file', default='kitti/annotations/instances.json', type=str,
                         help='Annotation file (coco form).')
-    parser.add_argument('--classes_file', default=None, type=str,
-                        help='A file that provides a list of class names.')
 
     global args
     args = parser.parse_args(argv)
@@ -73,16 +71,12 @@ def draw_annotation(img, mask, box, classname, color, score=None):
     
     return img
 
-def get_label_map():
-    return {x+1: x+1 for x in range(len(specified_classes))}
+KITTI_CLASSES = ('pedestrian', 'cyclist', 'car', 'bus', 'truck', 'traffic_light', 'traffic_sign')
 
 class COCOAnnotationTransform(object):
     """Transforms a COCO annotation into a Tensor of bbox coords and label index
     Initilized with a dictionary lookup of classnames to indexes
     """
-    def __init__(self):
-        self.label_map = get_label_map()
-
     def __call__(self, target, width, height):
         """
         Args:
@@ -97,9 +91,7 @@ class COCOAnnotationTransform(object):
         for obj in target:
             if 'bbox' in obj:
                 bbox = obj['bbox']
-                label_idx = obj['category_id']
-                if label_idx >= 0:
-                    label_idx = self.label_map[label_idx] - 1
+                label_idx = obj['category_id'] - 1
                 final_box = list(np.array([bbox[0], bbox[1], bbox[0]+bbox[2], bbox[1]+bbox[3]])/scale)
                 final_box.append(label_idx)
                 res += [final_box]  # [xmin, ymin, xmax, ymax, label_idx]
@@ -121,10 +113,10 @@ class COCODetection(data.Dataset):
     """
 
     def __init__(self, image_path, info_file,
-                 dataset_name='MS COCO', has_gt=True):
+                 dataset_name='KITTI', has_gt=True):
         # Do this here because we have too many things named COCO
         from pycocotools.coco import COCO
-
+        
         self.root = image_path
         self.coco = COCO(info_file)
         
@@ -197,58 +189,30 @@ if __name__ == '__main__':
     parse_args()
     print('Root directory path to images:\n %s' % Path(args.images_root).resolve())
     print('Annotation file (coco form):\n %s' % Path(args.info_file).resolve())
-    
-    if args.classes_file:
-        path = args.classes_file
-        assert os.path.exists(path), 'File does not exist: {}'.format(path)
-        specified_classes = []
-        for line in open(os.path.join(path)):
-            if not line.isspace():
-                name = line.strip()
-                if '\\t' in name: name = ' '.join(name.split('\\t'))
-                specified_classes.append(name)
-    else:
-        print('Error: The parameter classes_file must be set.')
-        exit()
-    print('\nSpecified class names:\n', specified_classes)
-    
     print()
     
     dataset = COCODetection(args.images_root, args.info_file)
 
     for i in range(len(dataset)):
-        print('\n--------[%d/%d]--------' % (i + 1, len(dataset)))
-        
-        print('Original Data:')
         img_id_i, file_name, img, height, width = dataset.pull_image(i) # BGR
         img_id_a, masks, target, num_crowds = dataset.pull_anno(i, height, width)
+        boxes, labels = target[:, :4], target[:, 4]
         
-        print(' image_id:', img_id_i, ' file_name:', file_name)
-        print(' img:', type(img), img.shape, ' h: %s w: %s' % (height, width), '\n', img)
-        print(' masks:', type(masks), masks.shape, '\n', masks)
-        
-        boxes = target[:, :4]
-        labels = target[:, 4]
-        
-        print(' boxes:', type(boxes), boxes.shape,'\n', boxes)
-        print(' labels:', type(labels), labels.shape,'\n', labels)
-        print(' num_crowds:', type(num_crowds), '\n', num_crowds)
+        print('\n--------[%d/%d]--------' % (i + 1, len(dataset)))
+        print(' image_id:', img_id_i, ' file_name:', file_name, ' shape:', img.shape)
+        print(' boxes:\n', boxes)
+        print(' labels:\n', labels)
         
         img_annotated = img.copy()
         scale = [width, height, width, height]
-        
         for j in range(boxes.shape[0]):
             mask = torch.from_numpy(masks[j]).cuda().float()
             box = boxes[j] * scale
             label = int(labels[j])
-            if label >= 0:
-                classname = specified_classes[label]
-            else:
-                classname = 'crowd'
-            
+            classname = KITTI_CLASSES[label]
             color = create_random_color()
             img_annotated = draw_annotation(img_annotated, mask, box, classname, color)
-        cv2.imshow('Original Data', img_annotated)
+        cv2.imshow('Data', img_annotated)
         
         # press 'Esc' to shut down, and every key else to continue
         key = cv2.waitKey(0)
